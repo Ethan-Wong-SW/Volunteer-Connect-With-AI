@@ -83,7 +83,7 @@ async def startup_event():
     global tagger
     print("🚀 Starting up: Loading AI Model...")
     # Force "embeddings" mode for Render Free Tier to prevent crashing
-    tagger = VolunteerTagger(mode="embeddings")
+    tagger = VolunteerTagger(mode="zero-shot")
     print("✅ Model loaded successfully.")
 
 # 3. Define data model
