@@ -100,7 +100,8 @@ app = FastAPI()
 
 # 2. Load your model *once* when the server starts
 #    This is crucial for performance.
-tagger = VolunteerTagger(mode="zero-shot")
+# tagger = VolunteerTagger(mode="zero-shot")
+tagger = VolunteerTagger(mode="embeddings")
 
 # 3. Define what data your API will expect (a simple text description)
 class Item(BaseModel):
