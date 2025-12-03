@@ -39,6 +39,15 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
     }
   });
 
+  // Check if user has completed the quiz
+  const hasCompletedQuiz = !!(profile.skills?.length > 0 || profile.interests?.length > 0);
+
+  useEffect(() => {
+    console.log('Profile updated:', profile);
+    console.log('Has completed quiz:', hasCompletedQuiz);
+  }, [profile, hasCompletedQuiz]);
+
+
   useEffect(() => {
     localStorage.setItem('favorites', JSON.stringify(favorites));
     if (typeof window !== 'undefined') {
@@ -79,37 +88,33 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
     [],
   );
 
-  // <-- UPDATED: Extract Skills AND Interests for dropdowns
   const { skills, skillLabelMap, uniqueInterests } = useMemo(() => {
     const labelMap = new Map();
     const interestSet = new Set();
 
     allOpportunities.forEach((item) => {
-      // Process Skills
       (item.skills || []).forEach((skill) => {
         const normalized = skill.toLowerCase();
         if (!labelMap.has(normalized)) {
           labelMap.set(normalized, skill);
         }
       });
-      // Process Interests
       (item.interests || []).forEach((int) => {
-        interestSet.add(int); // Keep original case for display
+        interestSet.add(int);
       });
     });
 
     const uniqueSkills = Array.from(labelMap.keys()).sort();
-    // Sort interests alphabetically
     const sortedInterests = Array.from(interestSet).sort((a, b) => a.localeCompare(b));
 
     return { skills: uniqueSkills, skillLabelMap: labelMap, uniqueInterests: sortedInterests };
   }, []);
 
-const filteredOpportunities = useMemo(() => {
+  const filteredOpportunities = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const normalizedUserInterests = (profile.interests || []).map((interest) => interest.toLowerCase());
     const normalizedUserSkills = (profile.skills || []).map((s) => s.toLowerCase());
-    
+
     const userInterestSet = new Set(normalizedUserInterests);
     const userSkillSet = new Set(normalizedUserSkills);
 
@@ -127,43 +132,43 @@ const filteredOpportunities = useMemo(() => {
 
         // 2. Location Filter
         const matchesLocation = locationFilter === 'all' || opportunity.location === locationFilter;
-        
+
         // 3. Skill Filter (Dropdown)
         const matchesSkill =
           skillFilter === 'all' || opportunity.skills.some((skill) => skill.toLowerCase() === skillFilter);
 
         // 4. Interest Filter (Dropdown)
-        const matchesInterestFilter = 
+        const matchesInterestFilter =
           interestFilter === 'all' || opportunity.interests.some(i => i.toLowerCase() === interestFilter.toLowerCase());
 
         // 5. Date Filter
         // Logic: Show opportunities starting ON or AFTER the selected date
         let matchesDate = true;
         const oppDateString = opportunity.date || opportunity.startDate;
-        
+
         if (oppDateString) {
-            const oppDate = new Date(oppDateString);
-            
-            if (!Number.isNaN(oppDate.getTime())) {
-                // FIX: Reset time to 00:00:00 immediately.
+          const oppDate = new Date(oppDateString);
+
+          if (!Number.isNaN(oppDate.getTime())) {
+            // FIX: Reset time to 00:00:00 immediately.
                 // This ensures we compare strictly by Date, ignoring Time/Timezones.
-                oppDate.setHours(0, 0, 0, 0);
+            oppDate.setHours(0, 0, 0, 0);
 
-                // Check Start Date
-                if (dateRange.start) {
-                    const startDate = new Date(dateRange.start);
-                    startDate.setHours(0, 0, 0, 0);
-                    if (oppDate < startDate) matchesDate = false;
-                }
-
-                // Check End Date
-                if (matchesDate && dateRange.end) {
-                    const endDate = new Date(dateRange.end);
-                    endDate.setHours(0, 0, 0, 0);
-                    // Logic: If opportunity is AFTER the selected end date, hide it.
-                    if (oppDate > endDate) matchesDate = false;
-                }
+            // Check Start Date
+            if (dateRange.start) {
+              const startDate = new Date(dateRange.start);
+              startDate.setHours(0, 0, 0, 0);
+              if (oppDate < startDate) matchesDate = false;
             }
+
+            // Check End Date
+            if (matchesDate && dateRange.end) {
+              const endDate = new Date(dateRange.end);
+              endDate.setHours(0, 0, 0, 0);
+              // Logic: If opportunity is AFTER the selected end date, hide it.
+              if (oppDate > endDate) matchesDate = false;
+            }
+          }
         }
 
         return matchesLocation && matchesSkill && matchesInterestFilter && matchesDate;
@@ -195,6 +200,37 @@ const filteredOpportunities = useMemo(() => {
     return scored.map(({ opportunity }) => opportunity);
   }, [searchTerm, locationFilter, skillFilter, interestFilter, dateRange, profile.interests, profile.skills]);
 
+  // If user hasn't completed quiz, show only quiz callout
+  if (!hasCompletedQuiz) {
+    return (
+      <section className="opportunities-shell">
+        <div className="quiz-callout quiz-callout--fullscreen">
+          <div className="quiz-callout__content">
+            <div className="quiz-callout__icon">
+              ✨
+            </div>
+            <div className="quiz-callout__text">
+              <h3>Ready to find your perfect match?</h3>
+              <p>Take our 1-minute quiz to personalize your feed based on your unique skills and interests.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="quiz-callout__button"
+            onClick={() => setIsModalOpen(true)}
+          >
+            Take the Quiz
+          </button>
+        </div>
+        <QuizModal
+          show={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onComplete={onQuizComplete}
+        />
+      </section>
+    );
+  }
+
   return (
     <>
       <section className="opportunities-shell">
@@ -203,7 +239,7 @@ const filteredOpportunities = useMemo(() => {
           <h1>Find the next place to lend a hand.</h1>
           <p>Browse every opportunity currently accepting volunteers and apply when one speaks to you.</p>
         </header>
-        {/* --- NEW VISUAL CALLOUT SECTION --- */}
+
         <div className="quiz-callout">
           <div className="quiz-callout__content">
             <div className="quiz-callout__icon">
@@ -214,15 +250,15 @@ const filteredOpportunities = useMemo(() => {
               <p>Take our 1-minute quiz to personalize your feed based on your unique skills and interests.</p>
             </div>
           </div>
-          <button 
-            type="button" 
-            className="quiz-callout__button" 
+          <button
+            type="button"
+            className="quiz-callout__button"
             onClick={() => setIsModalOpen(true)}
           >
             Take the Quiz
           </button>
         </div>
-        
+
         <div className="opportunities-filters" role="search">
           <label className="filter-field">
             <span>Search</span>
@@ -258,7 +294,6 @@ const filteredOpportunities = useMemo(() => {
               })}
             </select>
           </label>
-          {/* <-- NEW: Interests Filter --> */}
           <label className="filter-field">
             <span>Interests</span>
             <select value={interestFilter} onChange={(event) => setInterestFilter(event.target.value)}>
@@ -271,36 +306,35 @@ const filteredOpportunities = useMemo(() => {
             </select>
           </label>
 
-          {/* Date Range Filters */}
           <label className="filter-field">
             <span>From</span>
-            <input 
-                type="date" 
-                value={dateRange.start} 
-                onChange={(event) => setDateRange(prev => ({ ...prev, start: event.target.value }))}
-                style={{ fontFamily: 'inherit' }} 
+            <input
+              type="date"
+              value={dateRange.start}
+              onChange={(event) => setDateRange(prev => ({ ...prev, start: event.target.value }))}
+              style={{ fontFamily: 'inherit' }}
             />
           </label>
-          
+
           <label className="filter-field">
             <span>To</span>
-            <input 
-                type="date" 
-                value={dateRange.end} 
-                onChange={(event) => setDateRange(prev => ({ ...prev, end: event.target.value }))}
-                style={{ fontFamily: 'inherit' }} 
+            <input
+              type="date"
+              value={dateRange.end}
+              onChange={(event) => setDateRange(prev => ({ ...prev, end: event.target.value }))}
+              style={{ fontFamily: 'inherit' }}
             />
           </label>
 
           <div className="filter-field">
             <span style={{ visibility: 'hidden' }}>Action</span>
-            <button 
-                type="button" 
-                className="filter-clear-btn"
-                onClick={onClearProfile}
-                title="Clear all skills and interests from your profile"
+            <button
+              type="button"
+              className="filter-clear-btn"
+              onClick={onClearProfile}
+              title="Clear all skills and interests from your profile"
             >
-                Clear Filters
+              Clear Filters
             </button>
           </div>
         </div>
@@ -321,7 +355,7 @@ const filteredOpportunities = useMemo(() => {
             <p className="opportunities-empty">No opportunities match your filters right now.</p>
           )}
         </div>
-        <QuizModal 
+        <QuizModal
           show={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onComplete={onQuizComplete} // This passes the tags up to App.jsx
@@ -333,6 +367,7 @@ const filteredOpportunities = useMemo(() => {
     </>
   );
 };
+
 const OpportunityCard = ({ opportunity, onApply, isFavorite, onToggleFavorite, onOpen }) => {
   const organizer = opportunity.organizer || 'Community Partner';
   const dateLabel = formatStartDate(opportunity.startDate || opportunity.date);
