@@ -101,7 +101,7 @@ function App() {
         // Use Set to avoid duplicate tags
         const combinedInterests = [...new Set([...(currentProfile.interests || []), ...newTags.interests])];
         const combinedSkills = [...new Set([...(currentProfile.skills || []), ...newTags.skills])];
-        
+
         return {
           ...currentProfile,
           interests: combinedInterests,
@@ -124,8 +124,14 @@ function App() {
   }, []);
 
   const handleSignOut = useCallback(() => {
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      interests: [],
+      skills: [],
+    }));
     setIsAuthenticated(false);
     navigate('/login', { replace: true });
+    localStorage.setItem('userProfile', JSON.stringify(resetProfile));
   }, [navigate]);
 
   return (
@@ -239,8 +245,8 @@ function Header({ onSignOut }) {
   return (
     <header>
       <h1>
-        <NavLink 
-          to="/opportunities" 
+        <NavLink
+          to="/opportunities"
           className="logo-link"
           end
         >
