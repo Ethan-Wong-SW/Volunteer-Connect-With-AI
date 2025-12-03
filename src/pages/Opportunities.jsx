@@ -30,6 +30,7 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const snackbarTimerRef = useRef(null);
+  const [showAllOpportunities, setShowAllOpportunities] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     try {
       const parsed = JSON.parse(localStorage.getItem('favorites')) || [];
@@ -151,7 +152,7 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
 
           if (!Number.isNaN(oppDate.getTime())) {
             // FIX: Reset time to 00:00:00 immediately.
-                // This ensures we compare strictly by Date, ignoring Time/Timezones.
+            // This ensures we compare strictly by Date, ignoring Time/Timezones.
             oppDate.setHours(0, 0, 0, 0);
 
             // Check Start Date
@@ -340,17 +341,31 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
         </div>
 
         <div className="opportunities-list">
+          <h2 className="opportunities-section-title">Recommended opportunities based on your interests and skills</h2>
           {filteredOpportunities.length ? (
-            filteredOpportunities.map((opportunity) => (
-              <OpportunityCard
-                key={opportunity.id}
-                opportunity={opportunity}
-                onApply={onApply}
-                isFavorite={favorites.includes(opportunity.id)}
-                onToggleFavorite={handleToggleFavorite}
-                onOpen={() => navigate(`/opportunities/${opportunity.id}`)}
-              />
-            ))
+            <>
+              {(showAllOpportunities ? filteredOpportunities : filteredOpportunities.slice(0, 3)).map((opportunity) => (
+                <OpportunityCard
+                  key={opportunity.id}
+                  opportunity={opportunity}
+                  onApply={onApply}
+                  isFavorite={favorites.includes(opportunity.id)}
+                  onToggleFavorite={handleToggleFavorite}
+                  onOpen={() => navigate(`/opportunities/${opportunity.id}`)}
+                />
+              ))}
+              {!showAllOpportunities && filteredOpportunities.length > 5 && (
+                <div className="opportunities-see-all-container">
+                  <button
+                    type="button"
+                    className="opportunities-see-all-btn"
+                    onClick={() => setShowAllOpportunities(true)}
+                  >
+                    See all opportunities
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <p className="opportunities-empty">No opportunities match your filters right now.</p>
           )}
