@@ -341,7 +341,9 @@ const Opportunities = ({ profile = {}, onApply, onQuizComplete, onClearProfile }
         </div>
 
         <div className="opportunities-list">
-          <h2 className="opportunities-section-title">Recommended opportunities based on your interests and skills</h2>
+          {!showAllOpportunities && (
+            <h2 className="opportunities-section-title">Recommended opportunities based on your interests and skills</h2>
+          )}
           {filteredOpportunities.length ? (
             <>
               {(showAllOpportunities ? filteredOpportunities : filteredOpportunities.slice(0, 3)).map((opportunity) => (
