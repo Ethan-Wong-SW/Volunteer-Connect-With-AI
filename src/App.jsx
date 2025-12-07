@@ -45,7 +45,8 @@ function App() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [profile, setProfile] = useState(readProfileFromStorage);
-
+  const [applicationFlowStartTime, setApplicationFlowStartTime] = useState(Date.now());
+  
   useEffect(() => {
     localStorage.setItem('userProfile', JSON.stringify(profile));
   }, [profile]);
