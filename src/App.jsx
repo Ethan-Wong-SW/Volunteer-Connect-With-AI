@@ -7,6 +7,7 @@ import OpportunityDetailPage from './pages/id/OpportunityDetail';
 import OpportunityReviewsPage from './pages/id/OpportunityReviews';
 import FavouritesDetailPage from './pages/favorites/FavouritesDetail';
 import FavouriteReviewsPage from './pages/favorites/FavouriteReviews';
+import ReactGA from 'react-ga4';
 
 const DEFAULT_PROFILE = {
   name: 'Ben',
@@ -56,6 +57,19 @@ function App() {
 
   const handleApply = useCallback(
     (opportunity) => {
+            // --- GA Timing Event (NEW) --- //
+        if (applicationFlowStartTime) {
+            const totalTime = Date.now() - applicationFlowStartTime; // Calculate time elapsed in milliseconds
+
+            // Send the timing event to Google Analytics 4
+            // The GA Measurement is sent when the application flow is complete.
+            ReactGA.event({
+                category: 'Application Flow',
+                action: 'Time to Initiate Application',
+                label: `Opportunity ID: ${opportunity.id} - ${opportunity.title}`,
+                value: totalTime, // Time is sent in milliseconds
+            });
+        }
       const applicant = profile.name || DEFAULT_PROFILE.name;
       const appliedDate =
         opportunity.startDate || opportunity.date || new Date().toISOString().split('T')[0];
@@ -92,7 +106,7 @@ function App() {
         `Thanks, ${applicant}! We'll let ${opportunity.title} organizers know you're interested.`,
       );
     },
-    [profile.name],
+    [profile.name, applicationFlowStartTime],
   );
 
   const handleQuizComplete = useCallback(
